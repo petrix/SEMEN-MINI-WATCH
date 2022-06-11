@@ -73,6 +73,7 @@ void setup() {
   setTime(rtc.Unix);
   //  Serial.begin(115200);
   Serial.begin(9600);
+  Serial.println("sysT");
   while (!Serial);  // Wait for Arduino Serial Monitor to open
   //  delay(100);
   if (timeStatus() != timeSet) {

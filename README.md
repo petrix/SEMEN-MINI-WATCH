@@ -1,2 +1,2 @@
-# SEMEN-MINI-WATCH
-Hand watch, based on ARDUINO PRO MINI, designed specially for my friend Semen
+# SEMEN-NANO-WATCH
+Hand watch, based on ARDUINO NANO, designed specially for my friend Semen
