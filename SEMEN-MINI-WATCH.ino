@@ -1,4 +1,4 @@
-#include <Wire.h>
+//#include <Wire.h>
 //#include "LiquidCrystal_I2C.h"
 //#include <LiquidCrystal_I2C.h>
 #include <LiquidCrystal.h>
@@ -17,103 +17,31 @@ EncButton2<EB_ENCBTN> enc(INPUT_PULLUP, 10, 11, 12);  // энкодер с кн�
 #define DAY               'D'
 #define MONTH             'M'
 #define YEAR              'Y'
+
+#define BRIGHTNESS_HEADER 'B'
+#define CONTRAST_HEADER   'C'
 unsigned long currentTime;
 unsigned long syncTime;
 unsigned long backlightTimeout;
 unsigned long unixTime;
 
-//  Определяем системное время:                           // Время загрузки скетча.
-const char* strM = "JanFebMarAprMayJunJulAugSepOctNovDec"; // Определяем массив всех вариантов текстового представления текущего месяца.
-
-const char* sysT = __TIME__;                              // Получаем время компиляции скетча в формате "SS:MM:HH".
-const char* sysD = __DATE__;                              // Получаем дату  компиляции скетча в формате "MMM:DD:YYYY", где МММ - текстовое представление текущего месяца, например: Jul.
-//  Парсим полученные значения sysT и sysD в массив i:    // Определяем массив «i» из 6 элементов типа int, содержащий следующие значения: секунды, минуты, часы, день, месяц и год компиляции скетча.
-const int i[6] {
-  (sysT[6] - 48) * 10 + (sysT[7] - 48),
-  (sysT[3] - 48) * 10 + (sysT[4] - 48),
-  (sysT[0] - 48) * 10 + (sysT[1] - 48),
-  //  (sysD[4] - 48) * 10 + (sysD[5] - 48),
-  (sysD[5] - 48),
-  ((int)memmem(strM, 36, sysD, 3) + 3 - (int)&strM[0]) / 3,
-  (sysD[9] - 48) * 10 + (sysD[10] - 48)
-};
-
-//const byte minOffset = 60;
-//const unsigned int hourOffset = (unsigned int) 60 * 60;
-//const unsigned long dayOffset = (unsigned long) 60 * 60 * 24;
-//const unsigned long monthOffset = (unsigned long) 60 * 60 * 24 * 30;
-//const unsigned long yearOffset = (unsigned long) 60 * 60 * 24 * 30 * 12;
-
-
-//iarduino_RTC rtc(RTC_DS1302, 8, 9, 10);
-iarduino_RTC rtc(RTC_DS1302, 15, 16, 17);
+iarduino_RTC rtc(RTC_DS3231);
 const int rs = 2, en = 4, d4 = 5, d5 = 6, d6 = 7, d7 = 8;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 #define LCD_CONTRAST_PIN 3
 #define LCD_BACKLIGHT_PIN 9
-uint8_t LCD_CONTRAST = 45;
-uint8_t LCD_BACKLIGHT = 100;
 
+int8_t brightness_Value = 40;
+int8_t contrast_Value = 40;
 
-
-//uint8_t selector[8] = {0x10, 0x09, 0x05, 0x03, 0x0F, 0x00, 0x00, 0x00};
-byte arrow[8] = {0x04, 0x02, 0x09, 0x02, 0x04, 0x00, 0x00, 0x00};
-byte dd[8] = {0x0E, 0x0A, 0x0E, 0x00, 0x0E, 0x0A, 0x0E, 0x00};
+BigNums2x2 bigNum(TREK);
+//byte arrow[8] = {0x04, 0x02, 0x09, 0x02, 0x04, 0x00, 0x00, 0x00};
+//byte dd[8] = {0x0E, 0x0A, 0x0E, 0x00, 0x0E, 0x0A, 0x0E, 0x00};
 byte s3[8] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00};
 byte s2[8] = {0x00, 0x04, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00};
 byte s1[8] = {0x00, 0x00, 0x04, 0x00, 0x04, 0x00, 0x00, 0x00};
 byte s0[8] = {0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00};
-void setup() {
-  //  delay(300);
 
-  //  lcd.cursor_on();
-  //lcd.blink_on();
-  rtc.begin();
-  //  rtc.settime(i[0], i[1], i[2], i[3], i[4], i[5]);
-  setTime(rtc.Unix);
-  //  Serial.begin(115200);
-  Serial.begin(9600);
-  Serial.println("sysT");
-  while (!Serial);  // Wait for Arduino Serial Monitor to open
-  //  delay(100);
-  if (timeStatus() != timeSet) {
-    Serial.println("Unable to sync with the RTC");
-  } else {
-    Serial.println("RTC has set the system time");
-  }
-  Serial.println(rtc.Unix);
-  Serial.println(rtc.gettime("d-M-Y, H:i:s"));
-  ///////////////////////////////////////////////////////////
-  Serial.println(sysT);
-  Serial.println(sysD);
-
-  pinMode(13, OUTPUT);
-  setSyncProvider(requestSync);  //set function to call when sync required
-  setSyncInterval(100);
-
-  backlightTimeout = millis();
-
-  //  lcd.init();
-  //  lcd.backlight();
-  //
-  lcd.begin(16, 2);
-  analogWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT); //set backlight on
-  analogWrite(LCD_CONTRAST_PIN, LCD_CONTRAST); //set some contrast
-
-  lcd.display();
-  lcd.print(__DATE__);
-
-  lcd.createChar(0, s0);
-  lcd.createChar(1, s1);
-  lcd.createChar(2, s2);
-  lcd.createChar(3, s3);
-  lcd.createChar(5, arrow);
-  lcd.createChar(6, dd);
-  //  lcd.createChar(12, selector2);
-  printDotsAndSpaces();
-  drawClockValues();
-  drawDateValues();
-}
 boolean backLT_state = 1;
 boolean editMode = 0;
 boolean editH = 0;
@@ -122,51 +50,113 @@ boolean editS = 0;
 boolean editD = 0;
 boolean editM = 0;
 boolean editY = 0;
-int8_t h_Value = hour();
-int8_t i_Value = minute();
-int8_t s_Value = second();
-int8_t d_Value = day();
-int8_t m_Value = month();
-int16_t y_Value = year() - 2000;
-const char* monthArray[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-void loop() {
-  /////////////////////////
+boolean editBrightness = 0;
+boolean editContrast = 0;
+boolean customFont = 0;
+uint8_t cFontNum = 0;
 
+char FontStr[5] = {'\0'};
+const char *FontList[NUMFONTS] = {"NASA", "TRON", "TREK", "SERF"};
+
+//int8_t h_Value = hour();
+//int8_t i_Value = minute();
+//int8_t s_Value = second();
+//int8_t d_Value = day();
+//int8_t m_Value = month();
+//int16_t y_Value = year() - 2000;
+int8_t h_Value;
+int8_t i_Value;
+int8_t s_Value;
+int8_t d_Value;
+int8_t m_Value;
+int16_t y_Value;
+const char* monthArray[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+
+void setup() {
+  rtc.begin();
+  //  setTime(rtc.Unix);
+  Serial.begin(9600);
+  while (!Serial);  // Wait for Arduino Serial Monitor to open
+  //  if (timeStatus() != timeSet) {
+  //    Serial.println("Unable to sync with the RTC");
+  //  } else {
+  //    Serial.println("RTC has set the system time");
+  //  }
+  Serial.println(rtc.Unix);
+  Serial.println(rtc.gettime("d-M-Y, H:i:s"));
+  ///////////////////////////////////////////////////////////
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
+  pinMode(LCD_CONTRAST_PIN, OUTPUT);
+  //  setSyncProvider(requestSync);  //set function to call when sync required
+  //  setSyncInterval(100);
+  backlightTimeout = millis();
+  lcd.begin(16, 2);
+  analogWrite(LCD_BACKLIGHT_PIN, brightness_Value); //set backlight on
+  analogWrite(LCD_CONTRAST_PIN, contrast_Value); //set some contrast
+  lcd.display();
+  setDefChars();
+  printDotsAndSpaces();
+  drawClockValues();
+  drawDateValues();
+}
+
+void loop() {
   /////////////////////////
   enc.tick();                       // опрос происходит здесь
 
   if (millis() - currentTime > 1000) {
     currentTime = millis();
-    digitalWrite(13, HIGH);
-    if (editMode == 0) {
-      drawClockValues();
-      drawDateValues();
-    }
 
-    ////////////////
-    if (Serial.available() > 1) { // wait for at least two characters
+    if (Serial.available() > 2) { // wait for at least two characters
       char c = Serial.read();
+      Serial.print(" - c - ");
       Serial.println(c);
       if ( c == TIME_HEADER) {
         processSyncMessage();
+      } else if (c == BRIGHTNESS_HEADER) {
+        processBrightnessMessage();
+      } else if (c == CONTRAST_HEADER) {
+        processContrastMessage();
       }
     }
     ///////////////
-
-    if (millis() - currentTime > 10) digitalWrite(13, LOW);
-    //    delay(10);
-    //    digitalWrite(13, LOW);
+    if (editMode == 0) {
+      //      editH = 0;
+      //      editI = 0;
+      //      editS = 0;
+      //      editD = 0;
+      //      editM = 0;
+      //      editY = 0;
+      //      editBrightness = 0;
+      //      editContrast = 0;
+      digitalWrite(LED_BUILTIN, HIGH);
+      if (customFont == 0) {
+        drawClockValues();
+        drawDateValues();
+      } else {
+        //        bigNum.print(hour(), 2, 0);
+        //        bigNum.print(minute(), 2, 6);
+        //        bigNum.print(second(), 2, 12);
+        rtc.gettime();
+        bigNum.print(rtc.Hours, 2, 1);
+        bigNum.print(rtc.minutes, 2, 6);
+        bigNum.print(rtc.seconds, 2, 11);
+      }
+    }
+    ////////////////
   }
-  if (millis() - syncTime > 60000) {
+  if (millis() - currentTime > 10) digitalWrite(LED_BUILTIN, LOW);
+  if (millis() - syncTime > 600000) {
     syncTime = millis();
-    Serial.println("unix");
+    Serial.println("unix sync");
     rtc.gettime();
-    //    const unsigned long unix = rtc.gettimeUnix();
-    unixTime = rtc.gettimeUnix();
-    //    Serial.println(rtc.Unix);
-    Serial.println(unixTime);
-    //    setTime(rtc.Unix);
-    setTime(unixTime);
+    //    unixTime = rtc.gettimeUnix();
+    //    //    Serial.println(rtc.Unix);
+    //    Serial.println(unixTime);
+    //    //    setTime(rtc.Unix);
+    //    setTime(unixTime);
   }
   //  if (millis() - backlightTimeout > 30000) {
   //    lcd.noBacklight();
@@ -178,12 +168,19 @@ void loop() {
   if (enc.held()) {
     if (backLT_state == 1) {
       if (editMode == 0) {
-        h_Value = hour();
-        i_Value = minute();
-        s_Value = second();
-        d_Value = day();
-        m_Value = month();
-        y_Value = year() - 2000;
+        resetEditStates();
+        setDefChars();
+        lcd.clear();
+        printDotsAndSpaces();
+        drawClockValues();
+        drawDateValues();
+        //        h_Value = hour();
+        //        i_Value = minute();
+        //        s_Value = second();
+        //        d_Value = day();
+        //        m_Value = month();
+        //        y_Value = year() - 2000;
+        updateDateValues();
         Serial.println("Edit Mode");
         Serial.println("Edit Hours");
         editMode = 1;
@@ -191,29 +188,27 @@ void loop() {
         lcd.setCursor(3, 0);
         lcd.write(126);
       } else if (editMode == 1) {
-        //        if (editH == 1) rtc.settime(-1, -1, h_Value);
-        //        else if (editI == 1) rtc.settime(-1, i_Value);
-        //        else if (editS == 1) rtc.settime( s_Value);
-        //        else if (editD == 1) rtc.settime(-1, -1, -1,  d_Value);
-        //        else if (editM == 1) rtc.settime(-1, -1, -1, -1, m_Value);
-        //        else if (editY == 1) rtc.settime(-1, -1, -1, -1, -1, y_Value);
+        //        customFont = 0;
+        //        lcd.clear();
         //////////////////////////////////////////////////////////////
         rtc.settime(s_Value, i_Value, h_Value, d_Value, m_Value, y_Value);
         //////////////////////////////////////////////////////////////
+        //        unixTime = rtc.gettimeUnix();
+        //        setTime(unixTime);
+        //        Serial.println(unixTime);
+        resetEditStates();
+        if (customFont == 0) {
+          printDotsAndSpaces();
+          drawClockValues();
+          drawDateValues();
+        } else {
+          lcd.clear();
+          bigNum.font(cFontNum);
+          strcpy(FontStr, FontList[cFontNum]);
+          Serial.println(FontStr);
+        }
 
-        unixTime = rtc.gettimeUnix();
-        setTime(unixTime);
-        Serial.println(unixTime);
         editMode = 0;
-        editH = 0;
-        editI = 0;
-        editS = 0;
-        editD = 0;
-        editM = 0;
-        editY = 0;
-        printDotsAndSpaces();
-        drawClockValues();
-        drawDateValues();
         Serial.println("Exit from Edit Mode");
       }
     }
@@ -226,18 +221,14 @@ void loop() {
       if (backLT_state == 1) {
         backLT_state = 0;
         Serial.print("backLT_state - ");
-        Serial.println(backLT_state);
-        //        lcd.noBacklight();
+        Serial.println(backLT_state);        //        lcd.noBacklight();
         analogWrite(LCD_BACKLIGHT_PIN, 0); //set backlight on
-
         lcd.noDisplay();
       } else {
         backLT_state = 1;
         Serial.print("backLT_state - ");
-        Serial.println(backLT_state);
-        //        lcd.backlight();
-        analogWrite(LCD_BACKLIGHT_PIN, LCD_BACKLIGHT); //set backlight on
-
+        Serial.println(backLT_state);        //        lcd.backlight();
+        analogWrite(LCD_BACKLIGHT_PIN, brightness_Value); //set backlight on
         lcd.display();
       }
     } else if (editMode == 1) {
@@ -247,10 +238,6 @@ void loop() {
         lcd.write(126);
         editH = 0;
         editI = 1;
-        //        rtc.settime(-1, -1, h_Value);
-        //        unixTime = rtc.gettimeUnix();
-        //        Serial.println(unixTime);
-        //        setTime(unixTime);
         Serial.println("editMode - switching to minutes");
       } else if (editI == 1) {
         printDotsAndSpaces();
@@ -258,10 +245,6 @@ void loop() {
         lcd.write(126);
         editI = 0;
         editS = 1;
-        //        rtc.settime(-1, i_Value);
-        //        unixTime = rtc.gettimeUnix();
-        //        Serial.println(unixTime);
-        //        setTime(unixTime);
         Serial.println("editMode - switching to seconds");
       } else if (editS == 1) {
         printDotsAndSpaces();
@@ -269,10 +252,6 @@ void loop() {
         lcd.write(126);
         editS = 0;
         editD = 1;
-        //        rtc.settime( s_Value);
-        //        unixTime = rtc.gettimeUnix();
-        //        Serial.println(unixTime);
-        //        setTime(unixTime);
         Serial.println("editMode - switching to days");
       } else if (editD == 1) {
         printDotsAndSpaces();
@@ -280,10 +259,6 @@ void loop() {
         lcd.write(126);
         editD = 0;
         editM = 1;
-        //        rtc.settime(-1, -1, -1, d_Value);
-        //        unixTime = rtc.gettimeUnix();
-        //        Serial.println(unixTime);
-        //        setTime(unixTime);
         Serial.println("editMode - switching to month");
       } else if (editM == 1) {
         printDotsAndSpaces();
@@ -291,24 +266,69 @@ void loop() {
         lcd.write(126);
         editM = 0;
         editY = 1;
-        //        rtc.settime(-1, -1, -1, -1, m_Value);
-        //        unixTime = rtc.gettimeUnix();
-        //        Serial.println(unixTime);
-        //        setTime(unixTime);
         Serial.println("editMode - switching to year");
       } else if (editY == 1) {
         printDotsAndSpaces();
-
         editY = 0;
         editMode = 0;
-        //        rtc.settime( -1, -1, -1, -1, -1, y_Value);
         rtc.settime(s_Value, i_Value, h_Value, d_Value, m_Value, y_Value);
-        unixTime = rtc.gettimeUnix();
-        Serial.println(unixTime);
-        setTime(unixTime);
+        //        unixTime = rtc.gettimeUnix();
+        //        Serial.println(unixTime);
+        //        setTime(unixTime);
         drawClockValues();
         drawDateValues();
         Serial.println("editMode - exit from editMode");
+      } else if (editBrightness == 1) {
+        editBrightness = 0;
+        editContrast = 1;
+        updateDispSettings();
+        Serial.println("editContrast");
+      } else if (editContrast == 1) {
+        editContrast = 0;
+        editBrightness = 1;
+        updateDispSettings();
+      }
+    }
+  }
+
+  if (enc.hasClicks(2)) {
+    if (backLT_state == 1) {
+      if (editMode == 1) {
+        if (editBrightness == 0 && editContrast == 0) {
+          resetEditStates();
+          editBrightness = 1;
+          lcd.clear();
+          updateDispSettings();
+        } else {
+          resetEditStates();
+          setDefChars();
+          editH = 1;
+          //          h_Value = hour();
+          //          i_Value = minute();
+          //          s_Value = second();
+          //          d_Value = day();
+          //          m_Value = month();
+          //          y_Value = year() - 2000;
+          updateDateValues();
+          Serial.println("Edit Mode");
+          Serial.println("Edit Hours");
+          printDotsAndSpaces();
+          drawClockValues();
+          drawDateValues();
+          lcd.setCursor(3, 0);
+          lcd.write(126);
+        }
+
+      } else {
+
+        customFont = 1;
+        lcd.clear();
+        cFontNum++;
+        cFontNum %= 4;
+        bigNum.font(cFontNum);
+        strcpy(FontStr, FontList[cFontNum]);
+        Serial.println(FontStr);
+        //        if (cFontNum > 3)cFontNum = 0;
       }
     }
   }
@@ -377,6 +397,18 @@ void loop() {
         if (y_Value < 10) lcd.print("0");
         lcd.print(y_Value);
       }
+      if (editBrightness == 1) {
+        brightness_Value += enc.dir();
+        if (brightness_Value < 0)  brightness_Value = 0;
+        if (brightness_Value > 99)  brightness_Value = 99;
+        updateDispSettings();
+      }
+      if (editContrast == 1) {
+        contrast_Value += enc.dir();
+        if (contrast_Value < 0)  contrast_Value = 0;
+        if (contrast_Value > 99)  contrast_Value = 99;
+        updateDispSettings();
+      }
     }
   }
   //////////////////////////////////////////
@@ -384,39 +416,99 @@ void loop() {
   //////////////////////////////////////////
 }
 
+void updateDateValues() {
+  rtc.gettime();
+  h_Value = rtc.Hours;
+  i_Value = rtc.minutes;
+  s_Value = rtc.seconds;
+  d_Value = rtc.day;
+  m_Value = rtc.month;
+  y_Value = rtc.year;
+}
+
+void setDefChars() {
+  lcd.createChar(1, s0);
+  lcd.createChar(2, s1);
+  lcd.createChar(3, s2);
+  lcd.createChar(4, s3);
+  //  lcd.createChar(5, arrow);
+  //  lcd.createChar(6, dd);
+}
+
+void updateDispSettings() {
+  if (editBrightness == 1 || editContrast == 1) {
+    if (editBrightness == 1) {
+      lcd.setCursor(10, 1);
+      lcd.print(" ");
+      lcd.setCursor(10, 0);
+      lcd.write(126);
+    }
+    if (editContrast == 1) {
+      lcd.setCursor(10, 0);
+      lcd.print(" ");
+      lcd.setCursor(10, 1);
+      lcd.write(126);
+    }
+    lcd.setCursor(1, 0);
+    lcd.print("bright");
+    lcd.setCursor(1, 1);
+    lcd.print("contrast");
+    lcd.setCursor(12, 0);
+    if (brightness_Value < 10) lcd.print("0");
+    lcd.print(brightness_Value);
+    analogWrite(LCD_BACKLIGHT_PIN, brightness_Value);
+    lcd.setCursor(12, 1);
+    int8_t val = 99 - contrast_Value;
+    if (val < 10) lcd.print("0");
+    lcd.print(val);
+    analogWrite(LCD_CONTRAST_PIN, contrast_Value);
+  }
+}
+void resetEditStates() {
+  editH = 0;
+  editI = 0;
+  editS = 0;
+  editD = 0;
+  editM = 0;
+  editY = 0;
+  editBrightness = 0;
+  editContrast = 0;
+}
+
 void printDotsAndSpaces() {
   lcd.setCursor(0, 0);
+  lcd.write(4);
   lcd.write(3);
   lcd.write(2);
   lcd.write(1);
-  lcd.write((byte)0);
   lcd.setCursor(12, 0);
-  lcd.write((byte)0);
   lcd.write(1);
   lcd.write(2);
   lcd.write(3);
+  lcd.write(4);
   //  lcd.print("    ");
   lcd.setCursor(6, 0);
-  lcd.write(2);
+  lcd.write(3);
   //  lcd.print(":");
   lcd.setCursor(9, 0);
-  lcd.write(2);
+  lcd.write(3);
   //  lcd.print(":");
   //  lcd.setCursor(0, 1);
   //  lcd.write(0);
   //  lcd.print("_");
   lcd.setCursor(3, 1);
+  lcd.write(2);
   lcd.write(1);
-  lcd.write((byte)0);
   //  lcd.print("_");
   lcd.setCursor(7, 1);
-  lcd.write((byte)0);
+  lcd.write(1);
   //  lcd.print("_");
   lcd.setCursor(11, 1);
-  lcd.write((byte)0);
+  lcd.write(1);
   //  lcd.print("_");
 }
 void drawClockValues() {
+  rtc.gettime();
   //********************
   //**    12:34:56    **
   //**                **
@@ -428,85 +520,69 @@ void drawClockValues() {
   // digital clock display of the time
   ////////////////////////////////////
   lcd.setCursor(4, 0);
-  if (hour() < 10) lcd.print("0");
-  lcd.print(hour());
+  //  if (hour() < 10) lcd.print("0");
+  //  lcd.print(hour());
+  if (rtc.Hours < 10) lcd.print("0");
+  lcd.print(rtc.Hours);
   lcd.setCursor(7, 0);
-  if (minute() < 10) lcd.print("0");
-  lcd.print(minute());
+  //  if (minute() < 10) lcd.print("0");
+  //  lcd.print(minute());
+  if (rtc.minutes < 10) lcd.print("0");
+  lcd.print(rtc.minutes);
   lcd.setCursor(10, 0);
-  if (second() < 10) lcd.print("0");
-  lcd.print(second());
+  //  if (second() < 10) lcd.print("0");
+  //  lcd.print(second());
+  if (rtc.seconds < 10) lcd.print("0");
+  lcd.print(rtc.seconds);
 }
 //////////////////////////////////////
 void drawDateValues() {
   lcd.setCursor(0, 1);
-  lcd.print(dayShortStr(weekday()));
+  //  lcd.print(dayShortStr(weekday()));
   lcd.setCursor(5, 1);
-  if (day() < 10) lcd.print("0");
-  lcd.print(day());
+  if (rtc.day < 10) lcd.print("0");
+  lcd.print(rtc.day);
   lcd.setCursor(8, 1);
-  lcd.print(monthShortStr(month()));
+  lcd.print(monthArray[rtc.month - 1]);
+  //  lcd.print(monthShortStr(month()));
   lcd.setCursor(12, 1);
-  lcd.print(year());
-  //////////////////////////////////////
-  //  lcd.setCursor(4, 0);
-  //  if (rtc.gettime("H") < 10) lcd.print('0');
-  //  lcd.print(rtc.gettime("H"));
-  //  lcd.print(':');
-  //  if (rtc.minutes < 10) lcd.print('0');
-  //  lcd.print(rtc.minutes);
-  //  lcd.print(':');
-  //  if (rtc.seconds < 10) lcd.print('0');
-  //  lcd.print(rtc.seconds);
-  ///////////////////////////////////////
-  //  lcd.setCursor(1, 1);
-  //  //  lcd.print(rtc.weekday);
-  //  lcd.print(rtc.gettime("D"));
-  //  lcd.print(' ');
-  //  lcd.print(rtc.day);
-  //  lcd.print(' ');
-  //  lcd.print(rtc.gettime("M"));
-  //  lcd.print(' ');
-  //  lcd.print(rtc.gettime("Y"));
+  lcd.print("20");
+  if (rtc.year < 10) lcd.print("0");
+  lcd.print(rtc.year);
   ///////////////////////////////////////
 }
 
 void processSyncMessage() {
-  unsigned long value;
+  int8_t value;
   char c = Serial.read();
   Serial.println(c);
   switch (c) {
     case HOUR:
       value = Serial.parseInt();
-      //      if (value < 24)
       rtc.settime(-1, -1, value);
       Serial.println("HOUR");
       Serial.println(value);
       break;
     case MIN:
       value = Serial.parseInt();
-      //      if (value < 60)
       rtc.settime(-1, value);
       Serial.println("MIN");
       Serial.println(value);
       break;
     case SEC:
       value = Serial.parseInt();
-      //      if (value < 60)
       rtc.settime( value);
       Serial.println("SEC");
       Serial.println(value);
       break;
     case DAY:
       value = Serial.parseInt();
-      //      if (value < 32)
       rtc.settime(-1, -1, -1, value);
       Serial.println("DAY");
       Serial.println(value);
       break;
     case MONTH:
       value = Serial.parseInt();
-      //      if (value < 13)
       rtc.settime(-1, -1, -1, -1, value);
       Serial.println("MONTH");
       Serial.println(value);
@@ -522,20 +598,25 @@ void processSyncMessage() {
       // default опционален
       break;
   }
-  //  unsigned long pctime;
-  //  const unsigned long DEFAULT_TIME = 1357041600; // Jan 1 2013 - paul, perhaps we define in time.h?
-  //
-  //  pctime = Serial.parseInt();
-  //  Serial.println(pctime);
-  //  if ( pctime >= DEFAULT_TIME) { // check the integer is a valid time (greater than Jan 1 2013)
-  //    setTime(pctime); // Sync Arduino clock to the time received on the serial port
-  //  }
-  //  const unsigned long unix = rtc.gettimeUnix();
-  unixTime = rtc.gettimeUnix();
-  Serial.println(unixTime);
-  setTime(unixTime);
+  //  unixTime = rtc.gettimeUnix();
+  //  Serial.println(unixTime);
+  //  setTime(unixTime);
 }
 
-time_t requestSync() {
-  return 0; // the time will be sent later in response to serial mesg
+
+void processBrightnessMessage() {
+  //  int8_t value;
+  brightness_Value = Serial.parseInt();
+  Serial.println(brightness_Value);
+  analogWrite(LCD_BACKLIGHT_PIN, brightness_Value); //set backlight brightness
 }
+void processContrastMessage() {
+  //  unsigned long value;
+  //  int8_t value;
+  contrast_Value = Serial.parseInt();
+  Serial.println(contrast_Value);
+  analogWrite(LCD_CONTRAST_PIN, contrast_Value); //set some contrast
+}
+//time_t requestSync() {
+//  return 0; // the time will be sent later in response to serial mesg
+//}

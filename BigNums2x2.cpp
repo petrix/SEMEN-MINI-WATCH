@@ -418,11 +418,7 @@ uint8_t Tron6[4] = {5, 4, 0, 255};
 uint8_t Tron7[4] = {0, 32, 255, 1};
 uint8_t Tron8[4] = {255, 4, 3, 255};
 uint8_t Tron9[4] = {255, 2, 3, 6};
-uint8_t Tron10[4] = {32, 32, 32, 32};				// blank numeral
-uint8_t Tron11[4] = {255, 47, 47, 255};				// percent symbol
-uint8_t Tron12[4] = {2, 32, 2, 32};					// negative symbol
-uint8_t Tron13[4] = {176, 176, 176, 176};			// colon symbol
-uint8_t *MegaTron[BIGNUMCHARS] = {Tron0, Tron1, Tron2, Tron3, Tron4, Tron5, Tron6, Tron7, Tron8, Tron9, Tron10, Tron11, Tron12, Tron13};
+uint8_t *MegaTron[BIGNUMCHARS] = {Tron0, Tron1, Tron2, Tron3, Tron4, Tron5, Tron6, Tron7, Tron8, Tron9};
 
 uint8_t Trek0[4] = {5, 7, 255, 6};
 uint8_t Trek1[4] = {0, 2, 1, 7};
@@ -434,11 +430,7 @@ uint8_t Trek6[4] = {5, 4, 0, 3};
 uint8_t Trek7[4] = {0, 32, 3, 1};
 uint8_t Trek8[4] = {4, 4, 3, 3};
 uint8_t Trek9[4] = {4, 2, 3, 6};
-uint8_t Trek10[4] = {32, 32, 32, 32};				// blank numeral
-uint8_t Trek11[4] = {219, 47, 47, 219};				// percent symbol
-uint8_t Trek12[4] = {2, 32, 2, 32};					// negative symbol
-uint8_t Trek13[4] = {176, 176, 176, 176};			// colon symbol
-uint8_t *MegaTrek[BIGNUMCHARS] = {Trek0, Trek1, Trek2, Trek3, Trek4, Trek5, Trek6, Trek7, Trek8, Trek9, Trek10, Trek11, Trek12, Trek13};
+uint8_t *MegaTrek[BIGNUMCHARS] = {Trek0, Trek1, Trek2, Trek3, Trek4, Trek5, Trek6, Trek7, Trek8, Trek9};
 
 uint8_t Nasa0[4] = {5, 7, 6, 5};
 uint8_t Nasa1[4] = {0, 2, 1, 7};
@@ -450,11 +442,7 @@ uint8_t Nasa6[4] = {5, 4, 32, 3};
 uint8_t Nasa7[4] = {0, 5, 3, 32};
 uint8_t Nasa8[4] = {4, 4, 3, 3};
 uint8_t Nasa9[4] = {4, 32, 3, 5};
-uint8_t Nasa10[4] = {32, 32, 32, 32};				// blank numeral
-uint8_t Nasa11[4] = {111, 5, 5, 111};				// percent symbol
-uint8_t Nasa12[4] = {2, 32, 2, 32};					// negative symbol
-uint8_t Nasa13[4] = {176, 176, 176, 176};			// colon symbol
-uint8_t *MegaNasa[BIGNUMCHARS] = {Nasa0, Nasa1, Nasa2, Nasa3, Nasa4, Nasa5, Nasa6, Nasa7, Nasa8, Nasa9, Nasa10, Nasa11, Nasa12, Nasa13};
+uint8_t *MegaNasa[BIGNUMCHARS] = {Nasa0, Nasa1, Nasa2, Nasa3, Nasa4, Nasa5, Nasa6, Nasa7, Nasa8, Nasa9};
 
 uint8_t Serif0[4] = {5, 7, 6, 5};
 uint8_t Serif1[4] = {0, 2, 1, 7};
@@ -466,11 +454,7 @@ uint8_t Serif6[4] = {5, 4, 32, 3};
 uint8_t Serif7[4] = {0, 5, 3, 32};
 uint8_t Serif8[4] = {4, 4, 3, 3};
 uint8_t Serif9[4] = {4, 32, 3, 5};
-uint8_t Serif10[4] = {32, 32, 32, 32};				// blank numeral
-uint8_t Serif11[4] = {242, 47, 47, 242};			// percent symbol
-uint8_t Serif12[4] = {2, 32, 2, 32};				// negative symbol
-uint8_t Serif13[4] = {176, 176, 176, 176};			// colon symbol
-uint8_t *MegaSerif[BIGNUMCHARS] = {Serif0, Serif1, Serif2, Serif3, Serif4, Serif5, Serif6, Serif7, Serif8, Serif9, Serif10, Serif11, Serif12, Serif13};
+uint8_t *MegaSerif[BIGNUMCHARS] = {Serif0, Serif1, Serif2, Serif3, Serif4, Serif5, Serif6, Serif7, Serif8, Serif9};
 
 uint8_t *MegaFont[BIGNUMCHARS];
 
@@ -586,27 +570,13 @@ void BigNums2x2::printNum (uint8_t index, uint8_t *Number) {
 // - writes a 1 column blank space between each digit
 /////////////////////////////////////////////////////////////////////
 
-void BigNums2x2::print (long number, int length, int startcol, char symbol) {
+void BigNums2x2::print (long number, int length, int startcol) {
 
   // handles negative numbers
   // looks at the previous number printed and its location
   // prints and clears '-' accordingly
   static long lastnumber = 0;
   static int lastnumstartcol = 0;
-
-  // clears '-'
-  if (lastnumber < 0 && number >= 0) {
-    printNum(lastnumstartcol - 2, MegaFont[10]);
-  }
-  lastnumber = number;
-  lastnumstartcol = startcol;
-
-  // prints '-', turns negative number into positive
-  if (number < 0) {
-    number = -number;
-    printNum(startcol - 2, MegaFont[12]);
-  }
-
 
   // creates an array of the digits in reverse.  Ex: 3450 = {0, 5, 4, 3}
   // if more than length, truncates, throwing out the leftmost digit(s)
@@ -661,23 +631,6 @@ void BigNums2x2::print (long number, int length, int startcol, char symbol) {
   //k += 3;
   k += 2;
   
-	if (symbol == '%') printNum(k, MegaFont[11]);
-	if (symbol == ':') printNum(k, MegaFont[13]);
-  // clears the spaces between digits, prob not needed if you're good about using lcd.clear
-/*  
-  
-  for (i = 0; i < numdigits; i++) {
-    if (i == 0 && startcol == 0);
-    else {
-      int col = (startcol - 1) + i*3;
-      for (int row = 0; row < 2; row++){
-        lcd.setCursor(col, row);
-        lcd.write(32);
-      }
-    }
-  }
-*/
-
 }
 
 ////////////////////////////////////////////////////////////////
@@ -686,10 +639,10 @@ void BigNums2x2::print (long number, int length, int startcol, char symbol) {
 // prints a Big Symbol
 ////////////////////////////////////////////////////////////////
 
-void BigNums2x2::print (long number, char symbol) {
-  if (symbol == '%') print(number, numdigbsdefault, stcolbsdefault, '%');
-  else  print(number, numdigbsdefault, stcolbsdefault, 0);
-}
+//void BigNums2x2::print (long number, char symbol) {
+//  if (symbol == '%') print(number, numdigbsdefault, stcolbsdefault, '%');
+//  else  print(number, numdigbsdefault, stcolbsdefault, 0);
+//}
 
 ////////////////////////////////////////////////////////////////
 // uses default number of digits and position
@@ -698,5 +651,5 @@ void BigNums2x2::print (long number, char symbol) {
 ////////////////////////////////////////////////////////////////
 
 void BigNums2x2::print (long number) {
-  print(number, numdigbndefault, stcolbndefault, 0);
+  print(number, numdigbndefault, stcolbndefault);
 }

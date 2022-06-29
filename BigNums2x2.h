@@ -44,10 +44,10 @@ class BigNums2x2 {
 
     // initializes default number of digits and start column settings for big numbers and symbols (more below)
     // allows the user to call print with just a number (and optional symbol)
-    int stcolbndefault = 4;   // start column for big numbers
-    int stcolbsdefault = 4;   // start column for big symbols
-    int numdigbndefault = 5;  // number of digits for big numbers
-    int numdigbsdefault = 3;  // number of digits for big symbols
+    int stcolbndefault = 0;   // start column for big numbers
+    int stcolbsdefault = 0;   // start column for big symbols
+    int numdigbndefault = 2;  // number of digits for big numbers
+    int numdigbsdefault = 2;  // number of digits for big symbols
 
     // (optional) allows the user to set the defaults themselves
     void defaults(int stcolbn, int numdigbn, int stcolbs, int numdigbs);
@@ -59,7 +59,7 @@ class BigNums2x2 {
     //   symbol - prints a %, can add more symbols if desired
     // Multiple versions of printBigNum allow user to fix the location and size, and just send the bignum
     // ex: print(-122, 3, 5, '%') prints -122%, with the "-" symbol at column 2 and the "1" at column 5
-    void print(long number, int length, int startcol, char symbol);
+    void print(long number, int length, int startcol);
     void print(long number, char symbol);     // uses big symbol defaults defined above
     void print(long number);                  // uses big number defaults defined above
 
