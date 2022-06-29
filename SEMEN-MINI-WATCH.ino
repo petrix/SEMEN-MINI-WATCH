@@ -89,8 +89,11 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
   pinMode(LCD_CONTRAST_PIN, OUTPUT);
-  //  setSyncProvider(requestSync);  //set function to call when sync required
-  //  setSyncInterval(100);
+  setSyncProvider(requestSync);  //set function to call when sync required
+  setSyncInterval(100);
+  unsigned long unixTime = rtc.gettimeUnix();
+  setTime(unixTime);
+  Serial.print(dayShortStr(weekday()));
   backlightTimeout = millis();
   lcd.begin(16, 2);
   analogWrite(LCD_BACKLIGHT_PIN, brightness_Value); //set backlight on
@@ -158,16 +161,22 @@ void loop() {
     //    //    setTime(rtc.Unix);
     //    setTime(unixTime);
   }
-  //  if (millis() - backlightTimeout > 30000) {
-  //    lcd.noBacklight();
-  //    lcd.noDisplay();
-  //  }
+  if (millis() - backlightTimeout > 30000) {
+    if (backLT_state == 1) {
+      backLT_state = 0;
+      Serial.print("backLT_state - ");
+      Serial.println(backLT_state);        //        lcd.noBacklight();
+      analogWrite(LCD_BACKLIGHT_PIN, 0); //set backlight on
+      lcd.noDisplay();
+    }
+  }
   //////////////////////////////////////////
   //////////////////////////////////////////
   //////////////////////////////////////////
   if (enc.held()) {
     if (backLT_state == 1) {
       if (editMode == 0) {
+
         resetEditStates();
         setDefChars();
         lcd.clear();
@@ -226,6 +235,7 @@ void loop() {
         lcd.noDisplay();
       } else {
         backLT_state = 1;
+        backlightTimeout = millis();
         Serial.print("backLT_state - ");
         Serial.println(backLT_state);        //        lcd.backlight();
         analogWrite(LCD_BACKLIGHT_PIN, brightness_Value); //set backlight on
@@ -538,7 +548,7 @@ void drawClockValues() {
 //////////////////////////////////////
 void drawDateValues() {
   lcd.setCursor(0, 1);
-  //  lcd.print(dayShortStr(weekday()));
+  lcd.print(dayShortStr(weekday()));
   lcd.setCursor(5, 1);
   if (rtc.day < 10) lcd.print("0");
   lcd.print(rtc.day);
@@ -617,6 +627,6 @@ void processContrastMessage() {
   Serial.println(contrast_Value);
   analogWrite(LCD_CONTRAST_PIN, contrast_Value); //set some contrast
 }
-//time_t requestSync() {
-//  return 0; // the time will be sent later in response to serial mesg
-//}
+time_t requestSync() {
+  return 0; // the time will be sent later in response to serial mesg
+}
